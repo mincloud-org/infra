@@ -1,0 +1,99 @@
+name: ArgoCD Deployment Workflow
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+    paths:
+      - "workloads/**"
+      - "./github/workflows/deployment.yaml"
+  workflow_dispatch:
+
+jobs:
+  deploy_to_staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+
+      - name: Authenticate with ArgoCD
+        run: |
+          # Assuming the ArgoCD server is accessible via API server and kubectl is already configured
+          argocd login ${{ secrets.ARGOCD_SERVER_URL }} \
+          --username ${{ secrets.ARGOCD_USERNAME }} \
+          --password ${{ secrets.ARGOCD_PASSWORD }}
+
+      - name: Deploy services
+        run: |
+          echo "Scanning for services with application.yaml files in staging..."
+
+          for SERVICE_DIR in workloads/*/; do
+            if [[ ! -d "$SERVICE_DIR" ]]; then
+              continue
+            fi
+            
+            SERVICE=$(basename "$SERVICE_DIR")
+            echo "Processing service: $SERVICE"
+            
+            APP_DIR="$SERVICE_DIR/staging"
+            APPLICATION_FILE="$APP_DIR/application.yaml"
+
+            if [[ -f "$APPLICATION_FILE" ]]; then
+              echo "Found application.yaml for $SERVICE in staging"
+              
+              APP_NAME=$(grep "name:" "$APPLICATION_FILE" | head -1 | awk '{print $2}' | tr -d '"')
+              
+              if [[ -z "$APP_NAME" ]]; then
+                echo "Warning: Could not extract app name from $APPLICATION_FILE, using fallback naming"
+                APP_NAME="$SERVICE-staging"
+              fi
+              
+              echo "Processing application: $APP_NAME"
+              
+              if argocd app get "$APP_NAME" >/dev/null 2>&1; then
+                echo "Application $APP_NAME already exists, syncing..."
+                argocd app sync "$APP_NAME" --timeout 300
+                echo "Sync completed for $APP_NAME"
+              else
+                echo "Application $APP_NAME does not exist, creating using ArgoCD CLI..."
+
+                REPO_URL=$(grep "repoURL:" "$APPLICATION_FILE" | awk '{print $2}')
+                PATH_VALUE=$(grep "path:" "$APPLICATION_FILE" | awk '{print $2}')
+                DEST_NAMESPACE=$(grep "namespace:" "$APPLICATION_FILE" | tail -1 | awk '{print $2}')
+                
+                CURRENT_BRANCH="${{ github.ref_name }}"
+                
+                echo "Extracted values:"
+                echo "  Repo URL: $REPO_URL"
+                echo "  Path: $PATH_VALUE"  
+                echo "  Namespace: $DEST_NAMESPACE"
+                echo "  Current Branch: $CURRENT_BRANCH"
+                
+                argocd app create --from-file "$APPLICATION_FILE"
+                
+                if [ $? -eq 0 ]; then
+                  echo "Application $APP_NAME created successfully"
+                  echo "Syncing newly created application $APP_NAME..."
+                  argocd app sync "$APP_NAME" --timeout 300
+                  echo "Initial sync completed for $APP_NAME"
+                else
+                  echo "Error: Failed to create application $APP_NAME"
+                  exit 1
+                fi
+              fi
+              
+              echo "Checking sync status for $APP_NAME..."
+              argocd app wait "$APP_NAME" --timeout 300 --health || echo "Warning: $APP_NAME did not reach healthy state within timeout"
+              
+            else
+              echo "No application.yaml found for $SERVICE in staging, skipping..."
+            fi
+          done
+
+          echo "Staging deployment process completed!"

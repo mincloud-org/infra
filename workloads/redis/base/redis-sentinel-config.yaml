@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-sentinel-config
+  labels:
+    app: redis-sentinel
+    app.kubernetes.io/name: redis-sentinel
+    app.kubernetes.io/component: sentinel
+data:
+  sentinel.conf: |
+    # Redis Sentinel Configuration
+    bind 0.0.0.0
+    port 26379
+    
+    # Monitor the master
+    sentinel monitor mymaster redis-master-0.redis-master.default.svc.cluster.local 6379 2
+    
+    # Failover timeouts
+    sentinel down-after-milliseconds mymaster 30000
+    sentinel parallel-syncs mymaster 1
+    sentinel failover-timeout mymaster 180000
+    
+    # Logging
+    loglevel notice
+    
+    # Security
+    protected-mode no
+    
+  init-sentinel.sh: |
+    #!/bin/bash
+    set -e
+    
+    # Get current namespace
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    
+    # Update sentinel configuration with correct namespace
+    sed "s/default.svc.cluster.local/${NAMESPACE}.svc.cluster.local/g" /tmp/sentinel.conf > /etc/redis-sentinel/sentinel.conf
+    
+    echo "Sentinel configuration updated for namespace: ${NAMESPACE}"
+    cat /etc/redis-sentinel/sentinel.conf

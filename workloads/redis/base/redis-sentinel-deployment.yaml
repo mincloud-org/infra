@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-sentinel
+  labels:
+    app: redis-sentinel
+    app.kubernetes.io/name: redis-sentinel
+    app.kubernetes.io/component: sentinel
+    app.kubernetes.io/part-of: redis
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: redis-sentinel
+      app.kubernetes.io/name: redis-sentinel
+  template:
+    metadata:
+      labels:
+        app: redis-sentinel
+        app.kubernetes.io/name: redis-sentinel
+        app.kubernetes.io/component: sentinel
+    spec:
+      securityContext:
+        runAsUser: 999
+        fsGroup: 999
+      initContainers:
+      - name: init-sentinel
+        image: redis:8-alpine
+        command:
+        - sh
+        - /tmp/init-sentinel.sh
+        volumeMounts:
+        - name: sentinel-config
+          mountPath: /tmp/
+        - name: sentinel-config-writable
+          mountPath: /etc/redis-sentinel/
+      containers:
+      - name: sentinel
+        image: redis:8-alpine
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 999
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 26379
+          name: sentinel
+          protocol: TCP
+        command:
+        - redis-sentinel
+        - /etc/redis-sentinel/sentinel.conf
+        volumeMounts:
+        - name: sentinel-config-writable
+          mountPath: /etc/redis-sentinel/
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - -p
+            - "26379"
+            - ping
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - -p
+            - "26379"
+            - ping
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+          periodSeconds: 10
+          failureThreshold: 3
+      volumes:
+      - name: sentinel-config
+        configMap:
+          name: redis-sentinel-config
+          defaultMode: 0755
+      - name: sentinel-config-writable
+        emptyDir: {}
