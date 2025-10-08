@@ -75,7 +75,7 @@ jobs:
                 echo "  Namespace: $DEST_NAMESPACE"
                 echo "  Current Branch: $CURRENT_BRANCH"
                 
-                argocd app create --from-file "$APPLICATION_FILE"
+                argocd app create -f "$APPLICATION_FILE"
                 
                 if [ $? -eq 0 ]; then
                   echo "Application $APP_NAME created successfully"
