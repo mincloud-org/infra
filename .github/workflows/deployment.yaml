@@ -7,7 +7,7 @@ on:
       - develop
     paths:
       - "workloads/**"
-      - "./github/workflows/deployment.yaml"
+      - ".github/workflows/deployment.yaml"
   workflow_dispatch:
 
 jobs:
