@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: database
     app.kubernetes.io/part-of: redis
 spec:
-  serviceName: redis-master
+  serviceName: redis-master-headless
   replicas: 1
   selector:
     matchLabels:

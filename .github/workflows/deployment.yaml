@@ -27,10 +27,12 @@ jobs:
           # Assuming the ArgoCD server is accessible via API server and kubectl is already configured
           argocd login ${{ secrets.ARGOCD_SERVER_URL }} \
           --username ${{ secrets.ARGOCD_USERNAME }} \
-          --password ${{ secrets.ARGOCD_PASSWORD }}
+          --password ${{ secrets.ARGOCD_PASSWORD }} \
+          --grpc-web
 
       - name: Deploy services
         run: |
+          set -euo pipefail
           echo "Scanning for services with application.yaml files in staging..."
 
           for SERVICE_DIR in workloads/*/; do
@@ -56,37 +58,27 @@ jobs:
               
               echo "Processing application: $APP_NAME"
               
-              if argocd app get "$APP_NAME" >/dev/null 2>&1; then
-                echo "Application $APP_NAME already exists, syncing..."
-                argocd app sync "$APP_NAME" --timeout 300
-                echo "Sync completed for $APP_NAME"
-              else
-                echo "Application $APP_NAME does not exist, creating using ArgoCD CLI..."
+              # Upsert ensures existing apps get their spec updated (e.g., branch/path changes)
+              REPO_URL=$(grep "repoURL:" "$APPLICATION_FILE" | awk '{print $2}')
+              PATH_VALUE=$(grep "path:" "$APPLICATION_FILE" | awk '{print $2}')
+              DEST_NAMESPACE=$(grep "namespace:" "$APPLICATION_FILE" | tail -1 | awk '{print $2}')
+              CURRENT_BRANCH="${{ github.ref_name }}"
 
-                REPO_URL=$(grep "repoURL:" "$APPLICATION_FILE" | awk '{print $2}')
-                PATH_VALUE=$(grep "path:" "$APPLICATION_FILE" | awk '{print $2}')
-                DEST_NAMESPACE=$(grep "namespace:" "$APPLICATION_FILE" | tail -1 | awk '{print $2}')
-                
-                CURRENT_BRANCH="${{ github.ref_name }}"
-                
-                echo "Extracted values:"
-                echo "  Repo URL: $REPO_URL"
-                echo "  Path: $PATH_VALUE"  
-                echo "  Namespace: $DEST_NAMESPACE"
-                echo "  Current Branch: $CURRENT_BRANCH"
-                
-                argocd app create -f "$APPLICATION_FILE"
-                
-                if [ $? -eq 0 ]; then
-                  echo "Application $APP_NAME created successfully"
-                  echo "Syncing newly created application $APP_NAME..."
-                  argocd app sync "$APP_NAME" --timeout 300
-                  echo "Initial sync completed for $APP_NAME"
-                else
-                  echo "Error: Failed to create application $APP_NAME"
-                  exit 1
-                fi
+              echo "Extracted values:"
+              echo "  Repo URL: $REPO_URL"
+              echo "  Path: $PATH_VALUE"
+              echo "  Namespace: $DEST_NAMESPACE"
+              echo "  Current Branch: $CURRENT_BRANCH"
+
+              echo "Upserting application spec for $APP_NAME..."
+              if ! argocd app create -f "$APPLICATION_FILE" --upsert; then
+                echo "Error: Failed to upsert application $APP_NAME"
+                exit 1
               fi
+
+              echo "Syncing $APP_NAME..."
+              argocd app sync "$APP_NAME" --timeout 300
+              echo "Sync completed for $APP_NAME"
               
               echo "Checking sync status for $APP_NAME..."
               argocd app wait "$APP_NAME" --timeout 300 --health || echo "Warning: $APP_NAME did not reach healthy state within timeout"

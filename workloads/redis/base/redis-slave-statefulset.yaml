@@ -34,8 +34,12 @@ spec:
         - sh
         - -c
         - |
+          # Prepare redis.conf from template
+          NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
           cp /tmp/redis-slave.conf /etc/redis/redis.conf
-          echo "replicaof redis-master-0.redis-master.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local 6379" >> /etc/redis/redis.conf
+          # Append replicaof with an explicit leading newline to avoid concatenation
+          # Use headless Service pod DNS to point directly to master pod 0
+          printf "\nreplicaof redis-master-0.redis-master-headless.${NAMESPACE}.svc 6379\n" >> /etc/redis/redis.conf
         volumeMounts:
         - name: redis-config
           mountPath: /tmp/

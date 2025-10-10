@@ -26,9 +26,18 @@ spec:
       initContainers:
       - name: init-sentinel
         image: redis:8-alpine
+        securityContext:
+          runAsUser: 999
         command:
         - sh
-        - /tmp/init-sentinel.sh
+        - -c
+        - |
+          # Execute the init script through sh to avoid execute-bit issues on ConfigMap volumes
+          # Fail fast if the init script fails so the main container won't start without config
+          set -e
+          sh /tmp/init-sentinel.sh
+          echo "=== /etc/resolv.conf ==="
+          cat /etc/resolv.conf || true
         volumeMounts:
         - name: sentinel-config
           mountPath: /tmp/
@@ -68,7 +77,7 @@ spec:
             - -p
             - "26379"
             - ping
-          initialDelaySeconds: 30
+          initialDelaySeconds: 60
           timeoutSeconds: 5
           periodSeconds: 10
           failureThreshold: 3
@@ -79,7 +88,7 @@ spec:
             - -p
             - "26379"
             - ping
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
           timeoutSeconds: 1
           periodSeconds: 10
           failureThreshold: 3
