@@ -12,9 +12,10 @@ resources:
   - rabbitmq-pdb.yaml
   - serviceMonitor.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: rabbitmq
-  app.kubernetes.io/version: "4.0"
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: rabbitmq
+      app.kubernetes.io/version: "4.0"
 
 namePrefix: ""
 

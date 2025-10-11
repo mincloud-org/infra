@@ -8,16 +8,13 @@ namespace: staging
 
 namePrefix: staging-
 
-commonLabels:
-  environment: staging
+labels:
+  - pairs:
+      environment: staging
 
 patches:
   - path: rabbitmq-cluster-patch.yaml
   - path: rabbitmq-secret-patch.yaml
-
-replicas:
-  - name: rabbitmq
-    count: 3
 
 images:
   - name: rabbitmq

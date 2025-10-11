@@ -3,6 +3,9 @@ kind: RabbitmqCluster
 metadata:
   name: rabbitmq
 spec:
+  # Staging replica count
+  replicas: 3
+  
   # Staging 环境资源配置
   resources:
     requests:
