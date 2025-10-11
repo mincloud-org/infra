@@ -1,0 +1,78 @@
+---
+# Primary Service (for write operations)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-primary
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: primary
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: primary
+---
+# Replica Service (for read operations)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-replica
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: replica
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: replica
+---
+# Read Load Balancer Service (connects to all replicas)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-read
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: read
+spec:
+  type: ClusterIP
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: replica
+---
+# Write Service (connects to primary)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-write
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: write
+spec:
+  type: ClusterIP
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: primary

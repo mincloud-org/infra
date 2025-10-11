@@ -23,10 +23,31 @@ spec:
         app.kubernetes.io/component: database
         role: master
     spec:
+      terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: redis
+            role: master
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: redis
+                  role: master
+              topologyKey: kubernetes.io/hostname
       securityContext:
         runAsNonRoot: true
         runAsUser: 999
         fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: redis
         image: redis:8-alpine
@@ -39,6 +60,8 @@ spec:
           capabilities:
             drop:
             - ALL
+          seccompProfile:
+            type: RuntimeDefault
         ports:
         - containerPort: 6379
           name: redis
@@ -51,6 +74,15 @@ spec:
           mountPath: /data
         - name: redis-config
           mountPath: /etc/redis/
+        startupProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
         resources:
           requests:
             memory: "256Mi"
@@ -76,6 +108,15 @@ spec:
           timeoutSeconds: 1
           periodSeconds: 10
           failureThreshold: 3
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                echo "PreStop: Flushing Redis data to disk and shutting down...";
+                redis-cli -p 6379 save || true;
       volumes:
       - name: redis-config
         configMap:

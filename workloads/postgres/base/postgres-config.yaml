@@ -1,0 +1,131 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database
+data:
+  # PostgreSQL Primary Configuration
+  primary.conf: |
+    # Connection and Authentication
+    listen_addresses = '*'
+    max_connections = 200
+    
+    # Memory Configuration
+    shared_buffers = 256MB
+    effective_cache_size = 1GB
+    maintenance_work_mem = 64MB
+    work_mem = 4MB
+    
+    # WAL Configuration (for primary-replica replication)
+    wal_level = replica
+    max_wal_senders = 10
+    max_replication_slots = 10
+    wal_keep_size = 1GB
+    # Limit WAL kept for inactive replication slots to prevent unbounded growth
+    max_slot_wal_keep_size = 2GB
+    hot_standby = on
+    
+    # Archive Configuration (disabled - use persistent storage if needed)
+    archive_mode = off
+    # archive_command = 'test ! -f /archive/%f && cp %p /archive/%f'
+    
+    # Logging Configuration
+    logging_collector = on
+    log_directory = 'log'
+    log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+    log_statement = 'ddl'
+    log_min_duration_statement = 1000
+    log_line_prefix = '%m [%p] %u@%d '
+    log_timezone = 'UTC'
+    
+    # Checkpoint Configuration
+    checkpoint_completion_target = 0.9
+    max_wal_size = 2GB
+    min_wal_size = 1GB
+    
+  # PostgreSQL Replica Configuration
+  replica.conf: |
+    # Connection and Authentication
+    listen_addresses = '*'
+    max_connections = 200
+    
+    # Memory Configuration
+    shared_buffers = 256MB
+    effective_cache_size = 1GB
+    maintenance_work_mem = 64MB
+    work_mem = 4MB
+    
+    # Hot Standby Configuration
+    hot_standby = on
+    hot_standby_feedback = on
+    
+    # Logging Configuration
+    logging_collector = on
+    log_directory = 'log'
+    log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+    log_statement = 'ddl'
+    log_min_duration_statement = 1000
+    log_line_prefix = '%m [%p] %u@%d '
+    log_timezone = 'UTC'
+    
+  pg_hba.conf: |
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    local   all             all                                     trust
+    host    all             all             127.0.0.1/32            trust
+    host    all             all             ::1/128                 trust
+    host    all             all             0.0.0.0/0               md5
+    host    replication     replicator      0.0.0.0/0               md5
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: database
+data:
+  01-init-primary.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "Configuring PostgreSQL primary node..."
+    
+    # The PostgreSQL Docker entrypoint runs this script after initdb but before starting
+    # PGDATA is already initialized at this point
+    
+    # Check if primary configuration has already been applied
+    if ! grep -q "# Primary-specific configuration" "${PGDATA}/postgresql.conf" 2>/dev/null; then
+      echo "Applying primary configuration for the first time..."
+      # Append primary configuration to postgresql.conf
+      echo "" >> "${PGDATA}/postgresql.conf"
+      echo "# Primary-specific configuration" >> "${PGDATA}/postgresql.conf"
+      cat /config/primary.conf >> "${PGDATA}/postgresql.conf"
+    else
+      echo "Primary configuration already applied, skipping..."
+    fi
+    
+    # Always copy pg_hba.conf to ensure it's up to date
+    cp /config/pg_hba.conf "${PGDATA}/pg_hba.conf"
+    
+    echo "Primary configuration applied successfully"
+    
+  02-create-replication-user.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "Creating replication user..."
+    
+    # This script runs as part of docker-entrypoint-initdb.d
+    # Create replication user with password from environment variable
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -c "
+      DO \$\$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'replicator') THEN
+          CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD '${REPLICATION_PASSWORD}';
+        END IF;
+      END \$\$;
+    "
+    
+    echo "Replication user created successfully"

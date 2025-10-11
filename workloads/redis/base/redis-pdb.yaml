@@ -1,0 +1,39 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-master-pdb
+  labels:
+    app: redis
+    role: master
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: redis
+      role: master
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-slave-pdb
+  labels:
+    app: redis
+    role: slave
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: redis
+      role: slave
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-sentinel-pdb
+  labels:
+    app: redis-sentinel
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: redis-sentinel

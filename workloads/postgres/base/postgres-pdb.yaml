@@ -1,0 +1,32 @@
+---
+# Pod Disruption Budget for Primary
+# Ensures the primary is always available during cluster maintenance
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-primary-pdb
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: primary
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/component: primary
+---
+# Pod Disruption Budget for Replicas
+# Ensures at least 1 replica is available during cluster maintenance
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-replica-pdb
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: replica
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/component: replica

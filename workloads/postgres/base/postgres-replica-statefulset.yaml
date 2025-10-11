@@ -1,0 +1,223 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-replica
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/component: replica
+spec:
+  serviceName: postgres-replica
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/component: replica
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/component: replica
+    spec:
+      terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: postgres
+            app.kubernetes.io/component: replica
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: postgres
+                  app.kubernetes.io/component: replica
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsUser: 999
+        runAsNonRoot: true
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop: ["ALL"]
+            add: []
+        ports:
+        - name: postgres
+          containerPort: 5432
+          protocol: TCP
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-password
+        - name: POSTGRES_DB
+          value: "postgres"
+        - name: REPLICATION_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: replication-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: PRIMARY_SERVICE_NAME
+          value: "postgres-primary"
+        command:
+        - sh
+        - -c
+        - |
+          set -e
+          
+          echo "Setting up PostgreSQL replica node..."
+          # Ensure new files are created without group/world write permissions
+          umask 077
+          
+          # Get namespace from service account (same method as Redis slave)
+          NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+          
+          # Use PRIMARY_SERVICE_NAME env var which can be overridden in patches
+          # This handles cases where namePrefix is applied by Kustomize
+          PRIMARY_HOST="${PRIMARY_SERVICE_NAME}-0.${PRIMARY_SERVICE_NAME}.${NAMESPACE}.svc.cluster.local"
+          echo "Namespace: ${NAMESPACE}"
+          echo "Primary service name: ${PRIMARY_SERVICE_NAME}"
+          echo "Primary host: ${PRIMARY_HOST}"
+          
+          # Ensure data directory exists with secure permissions; non-root via fsGroup
+          mkdir -p "$PGDATA"
+          chmod 0750 "$PGDATA" || true
+
+          # Check if already initialized
+          if [ ! -s "$PGDATA/PG_VERSION" ]; then
+            echo "Waiting for primary to accept SQL connections (psql)..."
+            RETRY_COUNT=0
+            MAX_RETRIES=60
+            while true; do
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              OUTPUT=$(PGPASSWORD="${POSTGRES_PASSWORD}" psql -h "${PRIMARY_HOST}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -tAc 'SELECT 1' 2>&1 || true)
+              if [ "${OUTPUT}" = "1" ]; then
+                echo "Primary is accepting SQL connections."
+                break
+              fi
+              if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+                echo "ERROR: Primary not ready after ${MAX_RETRIES} attempts"
+                echo "Last psql output: ${OUTPUT}"
+                echo "Checking DNS resolution..."
+                nslookup "${PRIMARY_HOST}" || true
+                exit 1
+              fi
+              echo "Primary not ready yet (attempt ${RETRY_COUNT}/${MAX_RETRIES}). psql output: ${OUTPUT}"
+              sleep 5
+            done
+            
+            echo "Primary is ready! Syncing from primary..."
+            # Use pg_basebackup to sync data from primary
+            # Convert hostname to valid slot name (replace hyphens with underscores)
+            SLOT_NAME="replica_${HOSTNAME//-/_}"
+            echo "Creating replication slot: ${SLOT_NAME}"
+            
+            PGPASSWORD=${REPLICATION_PASSWORD} pg_basebackup \
+              -h "${PRIMARY_HOST}" \
+              -D "$PGDATA" \
+              -U replicator \
+              -v -P -R -X stream \
+              -C -S "${SLOT_NAME}"
+            
+            # Copy replica configuration
+            cat /config/replica.conf >> "$PGDATA/postgresql.conf"
+            cp /config/pg_hba.conf "$PGDATA/pg_hba.conf"
+            
+            echo "Replica node initialized successfully"
+          else
+            echo "Replica already initialized"
+          fi
+          
+          # Enforce secure permissions on data directory to satisfy PostgreSQL checks
+          echo "Ensuring PGDATA permissions are secure (0750) at $PGDATA"
+          chmod 0750 "$PGDATA" || true
+
+          # Start PostgreSQL
+          exec postgres -c config_file=/var/lib/postgresql/data/pgdata/postgresql.conf
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        - name: config
+          mountPath: /config
+        startupProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -U postgres -d postgres -h localhost
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -U postgres -d postgres -h localhost
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -U postgres -d postgres -h localhost
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                echo "PreStop: stopping PostgreSQL replica gracefully";
+                pg_ctl -D "$PGDATA" -m fast -w stop || true;
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      volumes:
+      - name: config
+        configMap:
+          name: postgres-config
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi

@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: postgres-ha
+
+resources:
+  - postgres-secret.yaml
+  - postgres-config.yaml
+  - postgres-primary-statefulset.yaml
+  - postgres-replica-statefulset.yaml
+  - services.yaml
+  - postgres-pdb.yaml
+  - postgres-replica-hpa.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: postgres
+  app.kubernetes.io/version: "16"
+
+images:
+  - name: postgres
+    newTag: 16-alpine
+
+namePrefix: ""
+
+namespace: ""

@@ -11,6 +11,7 @@ resources:
   - redis-slave-statefulset.yaml
   - redis-sentinel-deployment.yaml
   - services.yaml
+  - redis-pdb.yaml
 
 commonLabels:
   app.kubernetes.io/part-of: redis

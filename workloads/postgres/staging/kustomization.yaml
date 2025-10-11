@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../base
+
+namespace: staging
+
+namePrefix: staging-
+
+commonLabels:
+  environment: staging
+
+patches:
+  - path: postgres-primary-patch.yaml
+  - path: postgres-replica-patch.yaml
+  - path: postgres-secret-patch.yaml
+
+replicas:
+  - name: postgres-replica
+    count: 2
