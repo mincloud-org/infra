@@ -101,6 +101,14 @@ persistence:
 ### 外部访问 (通过 Ingress)
 - Management UI: `https://rabbitmq.example.com` (需要配置域名)
 
+## RabbitMQ 4.0 重要变更
+
+⚠️ **版本升级说明**:
+- **默认队列类型**: 从 Classic Queues 改为 Quorum Queues
+- **高可用性**: Quorum Queues 提供更好的一致性和分区容错
+- **性能**: RabbitMQ 4.0 在内存使用和性能方面有显著改进
+- **向后兼容**: 现有的 Classic Queues 仍然支持
+
 ## 生产环境建议
 
 1. **修改默认凭据**: 更新 `rabbitmq-secret.yaml` 中的密码
@@ -109,6 +117,7 @@ persistence:
 4. **配置备份策略**: 设置 RabbitMQ 数据备份
 5. **启用 TLS**: 配置有效的 TLS 证书
 6. **网络安全**: 根据需要调整网络策略
+7. **队列迁移**: 评估从 Classic Queues 到 Quorum Queues 的迁移需求
 
 ## 扩展配置
 
