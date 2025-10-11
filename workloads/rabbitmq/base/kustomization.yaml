@@ -2,24 +2,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 metadata:
-  name: rabbitmq
+  name: rabbitmq-cluster
 
 resources:
-  - rabbitmq-config.yaml
+  - rabbitmq-operator.yaml
+  - rabbitmq-cluster.yaml
   - rabbitmq-secret.yaml
-  - rabbitmq-statefulset.yaml
   - services.yaml
   - rabbitmq-pdb.yaml
+  - serviceMonitor.yaml
 
 commonLabels:
   app.kubernetes.io/part-of: rabbitmq
-  app.kubernetes.io/name: rabbitmq
-  app.kubernetes.io/component: message-broker
-  app.kubernetes.io/version: "4"
-
-images:
-  - name: rabbitmq
-    newTag: 4-management
+  app.kubernetes.io/version: "4.0"
 
 namePrefix: ""
 

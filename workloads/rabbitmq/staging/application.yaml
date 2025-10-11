@@ -5,8 +5,9 @@ metadata:
   namespace: argocd
   labels:
     app.kubernetes.io/name: rabbitmq
-    app.kubernetes.io/component: message-broker
     environment: staging
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
   source:
@@ -22,13 +23,28 @@ spec:
       selfHeal: true
       allowEmpty: false
     syncOptions:
-    - CreateNamespace=true
-    - PrunePropagationPolicy=foreground
-    - PruneLast=true
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
     retry:
       limit: 5
       backoff:
         duration: 5s
         factor: 2
         maxDuration: 3m
-  revisionHistoryLimit: 10
+  revisionHistoryLimit: 3
+  ignoreDifferences:
+  - group: ""
+    kind: Secret
+    jsonPointers:
+    - /data
+  - group: rabbitmq.com
+    kind: RabbitmqCluster
+    jsonPointers:
+    - /spec/rabbitmq/envConfig
+  info:
+  - name: Description
+    value: RabbitMQ cluster for staging environment
+  - name: Documentation
+    value: https://github.com/mincloud-org/infra/tree/main/workloads/rabbitmq

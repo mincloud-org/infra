@@ -1,0 +1,48 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq
+spec:
+  # Staging 环境资源配置
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  
+  # 较小的存储配置用于测试
+  persistence:
+    storageClassName: standard
+    storage: 5Gi
+  
+  # Staging 特定的 RabbitMQ 配置
+  rabbitmq:
+    additionalConfig: |
+      cluster_formation.peer_discovery_backend = rabbit_peer_discovery_k8s
+      cluster_formation.k8s.host = kubernetes.default.svc.cluster.local
+      cluster_formation.node_cleanup.interval = 30
+      cluster_formation.node_cleanup.only_log_warning = true
+      cluster_partition_handling = autoheal
+      queue_master_locator = min-masters
+      loopback_users.guest = false
+      default_user_tags.management = true
+      management.tcp.port = 15672
+      
+      # RabbitMQ 4.0 使用 quorum queues 替代 classic queue mirroring
+      default_queue_type = quorum
+      
+      # 降低内存要求以适应资源限制
+      vm_memory_high_watermark.relative = 0.5
+      disk_free_limit.absolute = 1GB
+      
+      # 调试模式
+      log.console = true
+      log.console.level = info
+      log.file.level = debug
+      
+      # Staging 环境特定配置
+      consumer_timeout = 300000
+      channel_max = 1000
+      frame_max = 131072
