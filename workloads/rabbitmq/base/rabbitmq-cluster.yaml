@@ -32,5 +32,5 @@ spec:
       metadata:
         annotations:
           prometheus.io/scrape: "true"
-          prometheus.io/port: "9419"
+          prometheus.io/port: "15692"
           prometheus.io/path: "/metrics"
