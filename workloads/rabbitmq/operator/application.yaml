@@ -10,7 +10,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/mincloud-org/infra.git
-    targetRevision: rabbitmq
+    targetRevision: HEAD
     path: workloads/rabbitmq/operator
   destination:
     server: https://kubernetes.default.svc
