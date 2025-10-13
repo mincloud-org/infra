@@ -37,6 +37,8 @@ spec:
               value: "true"
             - name: GUNICORN_ACCESS_LOGFILE
               value: "-"
+            - name: PYTHONWARNINGS
+              value: "ignore::UserWarning"
           envFrom:
             - secretRef:
                 name: pg-admin-secret
@@ -47,23 +49,19 @@ spec:
               mountPath: /pgadmin4/servers.json
               subPath: servers.json
           livenessProbe:
-            httpGet:
-              path: /login
+            tcpSocket:
               port: http
-              scheme: HTTP
             initialDelaySeconds: 60
             periodSeconds: 30
-            timeoutSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
-            httpGet:
-              path: /login
+            tcpSocket:
               port: http
-              scheme: HTTP
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 6
+            timeoutSeconds: 3
+            failureThreshold: 3
           resources:
             requests:
               cpu: 100m
