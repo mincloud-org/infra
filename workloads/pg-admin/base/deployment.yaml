@@ -18,38 +18,20 @@ spec:
         app.kubernetes.io/name: pg-admin
         app.kubernetes.io/component: web
     spec:
-      securityContext:
-        fsGroup: 5050
-        seccompProfile:
-          type: RuntimeDefault
       containers:
         - name: pg-admin
-          image: dpage/pgadmin4:8.13
+          image: dpage/pgadmin4:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
+          - containerPort: 80
           env:
             - name: PGADMIN_LISTEN_PORT
-              value: "8080"
+              value: "80"
             - name: PGADMIN_SERVER_JSON_FILE
               value: "/pgadmin4/servers.json"
-            - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
-              value: "True"
-            - name: PGADMIN_CONFIG_LOGIN_BANNER
-              value: "MinCloud PostgreSQL Admin"
-            - name: PGADMIN_DISABLE_POSTFIX
-              value: "true"
           envFrom:
             - secretRef:
                 name: pg-admin-secret
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
-            runAsNonRoot: false
-            capabilities:
-              drop: ["ALL"]
           volumeMounts:
             - name: data
               mountPath: /var/lib/pgadmin
@@ -74,10 +56,10 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              cpu: 50m
+              cpu: 100m
               memory: 128Mi
             limits:
-              cpu: 200m
+              cpu: 250m
               memory: 512Mi
       volumes:
         - name: data

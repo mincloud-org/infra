@@ -5,7 +5,6 @@ namespace: staging
 
 resources:
   - ../base
-  - application.yaml
   # - ingress.yaml
 
 namePrefix: staging-
