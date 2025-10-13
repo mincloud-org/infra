@@ -13,9 +13,11 @@ resources:
   - postgres-pdb.yaml
   - postgres-replica-hpa.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: postgres
-  app.kubernetes.io/version: "16"
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: postgres
+      app.kubernetes.io/version: "16"
 
 images:
   - name: postgres
