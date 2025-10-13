@@ -3,8 +3,6 @@ kind: Kustomization
 
 resources:
   - ../base
-  - pvc.yaml
-  - pvc-replica.yaml
 
 namespace: staging
 
