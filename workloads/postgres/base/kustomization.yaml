@@ -14,7 +14,7 @@ resources:
   - postgres-replica-hpa.yaml
 
 labels:
-  - includeSelectors: false
+  - includeSelectors: true
     pairs:
       app.kubernetes.io/part-of: postgres
       app.kubernetes.io/version: "16"

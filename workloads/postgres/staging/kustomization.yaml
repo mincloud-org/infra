@@ -9,7 +9,7 @@ namespace: staging
 namePrefix: staging-
 
 labels:
-  - includeSelectors: false
+  - includeSelectors: true
     pairs:
       environment: staging
 
