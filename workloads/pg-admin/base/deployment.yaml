@@ -19,9 +19,6 @@ spec:
         app.kubernetes.io/component: web
     spec:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 5050
-        runAsGroup: 5050
         fsGroup: 5050
         seccompProfile:
           type: RuntimeDefault
@@ -38,12 +35,19 @@ spec:
               value: "8080"
             - name: PGADMIN_SERVER_JSON_FILE
               value: "/pgadmin4/servers.json"
+            - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+              value: "True"
+            - name: PGADMIN_CONFIG_LOGIN_BANNER
+              value: "MinCloud PostgreSQL Admin"
+            - name: PGADMIN_DISABLE_POSTFIX
+              value: "true"
           envFrom:
             - secretRef:
                 name: pg-admin-secret
           securityContext:
-            allowPrivilegeEscalation: true
+            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
+            runAsNonRoot: false
             capabilities:
               drop: ["ALL"]
           volumeMounts:
