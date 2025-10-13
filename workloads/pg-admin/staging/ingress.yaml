@@ -1,13 +1,11 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: pg-admin
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  name: pg-admin-ingress
 spec:
   ingressClassName: nginx
   rules:
-    - host: "<<YOUR_PGADMIN_DOMAIN_HERE>>" # e.g., pgadmin.mincloud.org
+    - host: pgadmin.deepin.me
       http:
         paths:
           - path: /
@@ -19,5 +17,5 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - "<<YOUR_PGADMIN_DOMAIN_HERE>>"
-      secretName: "<<YOUR_TLS_SECRET_NAME_HERE>>"
+        - pgadmin.deepin.me
+      secretName: deepin-origin-tls
