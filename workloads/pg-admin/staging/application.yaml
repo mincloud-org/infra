@@ -1,17 +1,18 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: postgres-staging
+  name: pg-admin-staging
   namespace: argocd
   labels:
-    app.kubernetes.io/name: postgres
+    app.kubernetes.io/name: pg-admin
+    app.kubernetes.io/component: web
     environment: staging
 spec:
   project: default
   source:
     repoURL: https://github.com/mincloud-org/infra.git
     targetRevision: develop
-    path: workloads/postgres/staging
+    path: workloads/pg-admin/staging
   destination:
     server: https://kubernetes.default.svc
     namespace: staging
