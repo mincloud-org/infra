@@ -149,7 +149,8 @@ spec:
         app.kubernetes.io/name: postgres
         app.kubernetes.io/component: primary
     spec:
-      accessModes: ["ReadWriteOnce"]
+      accessModes:
+      - ReadWriteOnce
       resources:
         requests:
-          storage: 10Gi
+          storage: 5Gi

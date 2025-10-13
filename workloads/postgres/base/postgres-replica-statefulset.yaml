@@ -220,7 +220,8 @@ spec:
         app.kubernetes.io/name: postgres
         app.kubernetes.io/component: replica
     spec:
-      accessModes: [ "ReadWriteOnce" ]
+      accessModes:
+      - ReadWriteOnce
       resources:
         requests:
-          storage: 10Gi
+          storage: 5Gi
