@@ -46,12 +46,12 @@ spec:
       containers:
       - name: postgres
         image: postgres:16-alpine
+        imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
           capabilities:
             drop: ["ALL"]
-            add: []
         ports:
         - name: postgres
           containerPort: 5432
@@ -142,7 +142,6 @@ spec:
       - name: init-scripts
         configMap:
           name: postgres-init-scripts
-          defaultMode: 493
   volumeClaimTemplates:
   - metadata:
       name: data

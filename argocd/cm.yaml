@@ -10,3 +10,4 @@ data:
   accounts.admin: |
     apiKey: true
     capabilities: [login, apiKey]
+  application.instanceLabelKey: app.kubernetes.io/instance
