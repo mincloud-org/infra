@@ -20,7 +20,12 @@ spec:
   volumeClaimTemplates:
   - metadata:
       name: data
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/component: replica
     spec:
+      accessModes:
+      - ReadWriteOnce
       resources:
         requests:
           storage: 10Gi
