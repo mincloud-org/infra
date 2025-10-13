@@ -12,9 +12,11 @@ resources:
   - services.yaml
   - postgres-pdb.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: postgres
-  app.kubernetes.io/version: "16"
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: postgres
+      app.kubernetes.io/version: "16"
 
 images:
   - name: postgres
