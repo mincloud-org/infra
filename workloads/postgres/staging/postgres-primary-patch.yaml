@@ -5,6 +5,10 @@ metadata:
 spec:
   template:
     spec:
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: postgres-primary-data
       containers:
       - name: postgres
         resources:
@@ -14,11 +18,3 @@ spec:
           limits:
             memory: "2Gi"
             cpu: "2000m"
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 10Gi
