@@ -11,5 +11,8 @@ patchesStrategicMerge:
   - redis-master-patch.yaml
   - redis-slave-patch.yaml
 
-commonLabels:
-  environment: staging
+labels:
+  - includeSelectors: true
+    pairs:
+      environment: staging
+      app.kubernetes.io/part-of: redis

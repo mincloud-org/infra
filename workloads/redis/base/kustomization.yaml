@@ -13,9 +13,11 @@ resources:
   - services.yaml
   - redis-pdb.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: redis
-  app.kubernetes.io/version: "8-alpine"
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: redis
+      app.kubernetes.io/version: "8-alpine"
 
 images:
   - name: redis
