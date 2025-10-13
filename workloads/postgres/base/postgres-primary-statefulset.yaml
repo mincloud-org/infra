@@ -90,6 +90,15 @@ spec:
           mountPath: /config
         - name: init-scripts
           mountPath: /docker-entrypoint-initdb.d
+        command:
+        - sh
+        - -c
+        - |
+          set -e
+          umask 077
+          echo "Ensuring PGDATA permissions are secure (0750) at $PGDATA"
+          mkdir -p "$PGDATA" && chmod 0750 "$PGDATA"
+          exec docker-entrypoint.sh postgres
         lifecycle:
           preStop:
             exec:
@@ -99,15 +108,6 @@ spec:
               - |
                 echo "PreStop: waiting for PostgreSQL to shutdown gracefully";
                 pg_ctl -D "$PGDATA" -m fast -w stop || true;
-          command:
-          - sh
-          - -c
-          - |
-            set -e
-            umask 077
-            echo "Ensuring PGDATA permissions are secure (0750) at $PGDATA"
-            mkdir -p "$PGDATA" && chmod 0750 "$PGDATA"
-            exec docker-entrypoint.sh postgres
         livenessProbe:
           exec:
             command:
