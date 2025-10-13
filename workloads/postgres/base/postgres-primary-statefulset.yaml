@@ -14,9 +14,6 @@ spec:
       app.kubernetes.io/component: primary
   template:
     metadata:
-      labels:
-        app.kubernetes.io/name: postgres
-        app.kubernetes.io/component: primary
     spec:
       terminationGracePeriodSeconds: 60
       topologySpreadConstraints:
@@ -146,9 +143,6 @@ spec:
   volumeClaimTemplates:
   - metadata:
       name: data
-      labels:
-        app.kubernetes.io/name: postgres
-        app.kubernetes.io/component: primary
     spec:
       accessModes: ["ReadWriteOnce"]
       resources:
