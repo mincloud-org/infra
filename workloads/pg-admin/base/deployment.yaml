@@ -23,45 +23,21 @@ spec:
           image: dpage/pgadmin4:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
+          - containerPort: 80
           env:
-            - name: PGADMIN_LISTEN_PORT
-              value: "8080"
-            - name: PGADMIN_LISTEN_ADDRESS
-              value: "0.0.0.0"
             - name: PGADMIN_SERVER_JSON_FILE
               value: "/pgadmin4/servers.json"
             - name: PGADMIN_DISABLE_POSTFIX
               value: "true"
-            - name: GUNICORN_ACCESS_LOGFILE
-              value: "-"
-            - name: PYTHONWARNINGS
-              value: "ignore::UserWarning"
           envFrom:
             - secretRef:
                 name: pg-admin-secret
           volumeMounts:
             - name: data
               mountPath: /var/lib/pgadmin
-            - name: servers
-              mountPath: /pgadmin4/servers.json
-              subPath: servers.json
-          livenessProbe:
-            tcpSocket:
-              port: http
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            tcpSocket:
-              port: http
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            timeoutSeconds: 3
-            failureThreshold: 3
+            # - name: servers
+            #   mountPath: /pgadmin4/servers.json
+            #   subPath: servers.json
           resources:
             requests:
               cpu: 100m
