@@ -15,7 +15,9 @@ spec:
             memory: "2Gi"
             cpu: "2000m"
   volumeClaimTemplates:
-  - metadata:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
       name: data
       labels:
         app.kubernetes.io/name: postgres
