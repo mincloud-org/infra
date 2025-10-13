@@ -24,6 +24,8 @@ spec:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
       - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
     retry:
       limit: 5
       backoff:
