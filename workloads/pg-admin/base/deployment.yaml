@@ -31,18 +31,18 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 8080
               protocol: TCP
           env:
             - name: PGADMIN_LISTEN_PORT
-              value: "80"
+              value: "8080"
             - name: PGADMIN_SERVER_JSON_FILE
               value: "/pgadmin4/servers.json"
           envFrom:
             - secretRef:
                 name: pg-admin-secret
           securityContext:
-            allowPrivilegeEscalation: false
+            allowPrivilegeEscalation: true
             readOnlyRootFilesystem: false
             capabilities:
               drop: ["ALL"]
