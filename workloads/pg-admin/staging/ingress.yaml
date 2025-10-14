@@ -16,7 +16,7 @@ spec:
               service:
                 name: pg-admin
                 port:
-                  number: 80
+                  number: 8080
   tls:
     - hosts:
         - pgadmin.deepin.me
