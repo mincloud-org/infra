@@ -13,7 +13,7 @@ labels:
   - includeSelectors: true
     pairs:
       environment: staging
-      app.kubernetes.io/part-of: pg-admin
+      app.kubernetes.io/part-of: pgadmin
 
 patches:
   - path: secret-patch.yaml

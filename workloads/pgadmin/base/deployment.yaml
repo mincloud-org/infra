@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pg-admin
+  name: pgadmin
   labels:
-    app.kubernetes.io/name: pg-admin
+    app.kubernetes.io/name: pgadmin
     app.kubernetes.io/component: web
     app.kubernetes.io/part-of: postgres
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: pg-admin
+      app.kubernetes.io/name: pgadmin
       app.kubernetes.io/component: web
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: pg-admin
+        app.kubernetes.io/name: pgadmin
         app.kubernetes.io/component: web
     spec:
       containers:
-        - name: pg-admin
+        - name: pgadmin
           image: dpage/pgadmin4:latest
           imagePullPolicy: IfNotPresent
           ports:
@@ -35,7 +35,7 @@ spec:
               value: "true"
           envFrom:
             - secretRef:
-                name: pg-admin-secret
+                name: pgadmin-secret
           volumeMounts:
             - name: data
               mountPath: /var/lib/pgadmin
@@ -52,7 +52,7 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: pg-admin-data
+            claimName: pgadmin-data
         - name: servers
           configMap:
-            name: pg-admin-servers
+            name: pgadmin-servers

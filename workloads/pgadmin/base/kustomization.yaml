@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 metadata:
-  name: pg-admin
+  name: pgadmin
 
 resources:
   - secret.yaml
@@ -14,7 +14,7 @@ resources:
 labels:
   - includeSelectors: true
     pairs:
-      app.kubernetes.io/name: pg-admin
+      app.kubernetes.io/name: pgadmin
       app.kubernetes.io/component: web
       app.kubernetes.io/part-of: postgres
 

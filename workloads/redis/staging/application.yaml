@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: redis-staging
-  namespace: argocd
+  namespace: staging
   labels:
     app.kubernetes.io/name: redis
     app.kubernetes.io/component: database

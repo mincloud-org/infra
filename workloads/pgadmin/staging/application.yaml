@@ -1,10 +1,10 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: pg-admin-staging
-  namespace: argocd
+  name: pgadmin-staging
+  namespace: staging
   labels:
-    app.kubernetes.io/name: pg-admin
+    app.kubernetes.io/name: pgadmin
     app.kubernetes.io/component: web
     environment: staging
 spec:
@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://github.com/mincloud-org/infra.git
     targetRevision: develop
-    path: workloads/pg-admin/staging
+    path: workloads/pgadmin/staging
   destination:
     server: https://kubernetes.default.svc
     namespace: staging

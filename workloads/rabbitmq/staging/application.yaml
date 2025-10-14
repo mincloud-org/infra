@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: rabbitmq-staging
-  namespace: argocd
+  namespace: staging
   labels:
     app.kubernetes.io/name: rabbitmq
     app.kubernetes.io/component: broker
@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/mincloud-org/infra.git
-    targetRevision: HEAD
+    targetRevision: develop
     path: workloads/rabbitmq/staging
   destination:
     server: https://kubernetes.default.svc
