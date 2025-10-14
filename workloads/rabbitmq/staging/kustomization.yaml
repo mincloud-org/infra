@@ -5,6 +5,7 @@ namespace: staging
 
 resources:
   - ../base
+  - ingress.yaml
 
 patches:
   - path: rabbitmq-cluster-patch.yaml
