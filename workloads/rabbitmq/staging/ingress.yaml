@@ -4,6 +4,9 @@ metadata:
   name: rabbitmq-management-ingress
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
 spec:
   ingressClassName: nginx
   rules:
@@ -14,7 +17,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: rabbitmq
+                name: staging-rabbitmq
                 port:
                   number: 15672
   tls:
