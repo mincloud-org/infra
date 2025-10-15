@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: pgadmin-staging
-  namespace: staging
+  namespace: argocd
   labels:
     app.kubernetes.io/name: pgadmin
     app.kubernetes.io/component: web

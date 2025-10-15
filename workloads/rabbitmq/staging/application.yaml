@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: rabbitmq-staging
-  namespace: staging
+  namespace: argocd
   labels:
     app.kubernetes.io/name: rabbitmq
     app.kubernetes.io/component: broker

@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: rabbitmq-operator
-  namespace: staging
+  namespace: argocd
   labels:
     app.kubernetes.io/name: rabbitmq-operator
     app.kubernetes.io/component: operator
