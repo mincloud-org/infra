@@ -5,7 +5,8 @@ namespace: staging
 
 resources:
   - ../base
-  - application.yaml
+
+namePrefix: staging-
 
 patchesStrategicMerge:
   - redis-master-patch.yaml
