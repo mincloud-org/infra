@@ -3,7 +3,10 @@ kind: RabbitmqCluster
 metadata:
   name: rabbitmq
 spec:
-  replicas: 3
+  replicas: 2
+  persistence:
+    storageClassName: "local-path"
+    storage: 5Gi
   resources:
     requests:
       cpu: "200m"
